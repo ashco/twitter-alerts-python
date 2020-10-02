@@ -27,7 +27,6 @@ class StdOutListener(StreamListener):
 
         tweetData = {
             'screen_name': d['user']['screen_name'],
-            # 'id': str(d['user']['id']),
             'message': d['text'],
             'urls': list(map(lambda url: url['expanded_url'], d['entities']['urls']))
         }
@@ -42,31 +41,32 @@ class StdOutListener(StreamListener):
 
 
     def _composeEmailMessage(self, tweetData):
-        return f'''
-        New Twitter Keyword Match:
+        message = f'''
+New Twitter Keyword Match:
 
-        Username:      @{tweetData['screen_name']}
-        Tweet Message: {tweetData["message"]}
-        URLs:          {tweetData['urls']}
-        '''
+Username: @{tweetData['screen_name']}
+Tweet Message: {tweetData["message"]}\n\n'''
+
+        for url in tweetData['urls']:
+            message += url + '\n'
+
+        return message
 
     def on_data(self, data):
         tweetData = self._parseData(data)
 
-        # check for keyword match
-        messageSet = set(tweetData['message'].lower().split(' '))
-        keywordSet = set(self.config[tweetData['screen_name']])
+        if tweetData['screen_name'] in self.config:
+            matchedWords = [keyword for keyword in self.config[tweetData['screen_name']] if keyword in tweetData['message']]
 
-        # overlap in words
-        if len(messageSet & keywordSet):
-            print('Keyword match found!')
-            print(tweetData['screen_name'], ':', messageSet & keywordSet)
-            self._sendEmail(tweetData)
+            if len(matchedWords):
+                print('Keyword match found!')
+                print(tweetData['screen_name'], ':', matchedWords)
+                self._sendEmail(tweetData)
 
         return True
 
     def on_error(self, status):
-        print(status)
+        print('ERROR YO!', status)
 
 
 class TwitterAlerts:
@@ -85,7 +85,7 @@ class TwitterAlerts:
         print('USERNAME', ' '*(maxUsernameLen - 8), ':', "[KEYWORDS]")
         for username, keywords in self.config.items():
             print(username, ' '*(maxUsernameLen - len(username)), ':', keywords)
-        print('\n')
+        print('')
 
     def _createAuth(self):
         auth = OAuthHandler(consumer_key, consumer_secret)
@@ -104,7 +104,6 @@ class TwitterAlerts:
         userIds = list(map(lambda username: str(self.getUser(username).id), self.config.keys()))
         # create listener for all userids in config
         self.stream.filter(follow = userIds)
-        # self.stream.filter(track=['baseball'])
 
 
 TwitterAlerts(config['usernames']).startFilter()
