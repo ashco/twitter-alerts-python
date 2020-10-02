@@ -1,5 +1,5 @@
 ﻿import os, json, yaml
-from emailServer import Email
+from emailService import Email
 from tweepy import API, OAuthHandler, Stream, StreamListener
 import settings
 
@@ -44,8 +44,7 @@ class StdOutListener(StreamListener):
         message = f'''
 New Twitter Keyword Match:
 
-Username: @{tweetData['screen_name']}
-Tweet Message: {tweetData["message"]}\n\n'''
+@{tweetData['screen_name']}: {tweetData["message"]}\n\n'''
 
         for url in tweetData['urls']:
             message += url + '\n'
@@ -54,19 +53,19 @@ Tweet Message: {tweetData["message"]}\n\n'''
 
     def on_data(self, data):
         tweetData = self._parseData(data)
+        print(f'@{tweetData["screen_name"]} tweeted: {tweetData["message"]}\n')
 
         if tweetData['screen_name'] in self.config:
             matchedWords = [keyword for keyword in self.config[tweetData['screen_name']] if keyword in tweetData['message']]
 
             if len(matchedWords):
-                print('Keyword match found!')
-                print(tweetData['screen_name'], ':', matchedWords)
+                print(matchedWords, 'Keyword match found. Sending email.\n')
                 self._sendEmail(tweetData)
 
         return True
 
     def on_error(self, status):
-        print('ERROR YO!', status)
+        print('STREAM ERROR:', status)
 
 
 class TwitterAlerts:
@@ -80,8 +79,7 @@ class TwitterAlerts:
 
     def generateInitMsg(self):
         maxUsernameLen = len(max(list(self.config.keys()) + ['USERNAME'], key = len))
-        print('Twitter keyword alert service initialized')
-        print('=========================================')
+        print('Twitter keyword alert service initialized\n')
         print('USERNAME', ' '*(maxUsernameLen - 8), ':', "[KEYWORDS]")
         for username, keywords in self.config.items():
             print(username, ' '*(maxUsernameLen - len(username)), ':', keywords)
