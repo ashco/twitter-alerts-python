@@ -1,6 +1,10 @@
 ﻿# Twitter Keyword Alert Service
 This service sends email alerts when specified Twitter users tweet specific keywords. Twitter is the modern day RRS feed, and this app allows you to monitor for what you want without all the extra noise.
 
+The creation and workings of this project has been documented through video. Check it out here:
+
+https://youtu.be/hOsnQI4WK7Q
+
 ## How to start
 Simply run the program with the following command:
 
